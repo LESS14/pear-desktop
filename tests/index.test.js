@@ -8,6 +8,8 @@ process.env.NODE_ENV = 'test';
 const appPath = path.resolve(import.meta.dirname, '..');
 
 test('Pear Desktop App - With default settings, app is launched and visible', async () => {
+  test.setTimeout(60 * 1000);
+
   const app = await electron.launch({
     cwd: appPath,
     args: [
@@ -21,18 +23,16 @@ test('Pear Desktop App - With default settings, app is launched and visible', as
 
   const window = await app.firstWindow();
 
-  const consentForm = await window.$(
-    "form[action='https://consent.\u0079\u006f\u0075\u0074\u0075\u0062\u0065.com/save']",
+  await window.waitForLoadState('domcontentloaded');
+
+  const consentForm = window.locator(
+    "form[action='https://consent.youtube.com/save']",
   );
-  if (consentForm) {
-    await consentForm.click('button');
+
+  if (await consentForm.isVisible({ timeout: 5000 })) {
+    await consentForm.locator('button').click();
   }
-
-  // const title = await window.title();
-  // expect(title.replaceAll(/\s/g, ' ')).toEqual('Pear Desktop');
-
-  const url = window.url();
-  expect(url.startsWith('https://music.\u0079\u006f\u0075\u0074\u0075\u0062\u0065.com')).toBe(true);
+  await expect(window).toHaveURL(/^https:\/\/music\.youtube\.com/);
 
   await app.close();
 });
